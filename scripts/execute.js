@@ -19,29 +19,32 @@ async function main() {
     })
     console.log({ sender })
     const AccountFactory = await ethers.getContractFactory("AccountFactory")
-    const initCode = "0x"
-    // FACTORY_ADDRESS + AccountFactory.interface.encodeFunctionData("createAccount", [address0]).slice(2);
+    const initCode = //"0x"
+    FACTORY_ADDRESS + AccountFactory.interface.encodeFunctionData("createAccount", [address0]).slice(2);
 
-    // await entryPoint.depositTo(PM_ADDRESS, {
-    //     value: ethers.parseEther('100'),
-    // })
+    await entryPoint.depositTo(PM_ADDRESS, {
+        value: ethers.parseEther('100'),
+    })
 
     const Account = await ethers.getContractFactory("Account")
-    const userOP = {
+    const userOp = {
         sender,
         nonce: await entryPoint.getNonce(sender, 0),
         initCode,
         callData: Account.interface.encodeFunctionData("execute"),
-        callGasLimit: 200_200,
-        verificationGasLimit: 200_200,
-        preVerificationGas: 50_000,
+        callGasLimit: 400_200,
+        verificationGasLimit: 400_200,
+        preVerificationGas: 100_000,
         maxFeePerGas: ethers.parseUnits('10', 'gwei'),
         maxPriorityFeePerGas: ethers.parseUnits('5', 'gwei'),
         paymasterAndData: PM_ADDRESS,
         signature: "0x"
     }
 
-    const tx = await entryPoint.handleOps([userOP], address0)
+    const userOpHash = await entryPoint.getUserOpHash(userOp)
+    userOp.signature = signer0.signMessage(ethers.getBytes(userOpHash))
+
+    const tx = await entryPoint.handleOps([userOp], address0)
     const receipt = await tx.wait()
     console.log(receipt)
 
